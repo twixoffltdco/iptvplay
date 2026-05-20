@@ -1,4 +1,4 @@
-/* === SmartTVLove Player JS === */
+/* === IPTVPlayer LIVE APP - Premium Player JS 2026 === */
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let allChannels = [];
@@ -43,7 +43,7 @@ window.addEventListener('load', async () => {
   setupVideoEvents();
   setupControlsHide();
   await ensurePlaybackEngines();
-  const saved = localStorage.getItem('stv_last_url');
+  const saved = localStorage.getItem('iptv_last_url');
   if (saved) document.getElementById('m3uUrl').value = saved;
 });
 
@@ -121,7 +121,7 @@ async function loadPlaylist() {
     }
 
     parseM3U(text);
-    localStorage.setItem('stv_last_url', url);
+    localStorage.setItem('iptv_last_url', url);
     showToast(`✅ Загружено ${allChannels.length} каналов`);
   } catch (e) {
     showToast('❌ ' + e.message);
