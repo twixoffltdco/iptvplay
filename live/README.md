@@ -96,4 +96,4 @@ https://videocdnhub.tatnet.app/?src=<ссылка_на_поток>
 ---
 
 © 2026 IPTVPlayer LIVE APP · Premium Edition
-Сделано с любовью ❤️ для coder.qwen.ai
+Сделано с любовью ❤️ для OinkTechLLC (OinkTechLtd)
