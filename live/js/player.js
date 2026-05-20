@@ -10,7 +10,8 @@ let playerjsInstance = null;
 let sidebarOpen = true;
 let controlsTimer = null;
 let startupWatchdog = null;
-let currentEngine = 'playerjs'; // Default engine
+let currentPlayerType = 'standard'; // Default player type
+let currentStreamSource = 'direct'; // Default stream source
 
 const HLS_CDNS = [
   'https://cdn.jsdelivr.net/npm/hls.js@latest',
@@ -22,6 +23,13 @@ const DASH_CDNS = [
   'https://cdnjs.cloudflare.com/ajax/libs/dashjs/4.7.4/dash.all.min.js'
 ];
 const PLAYERJS_URL = 'https://playerjs.com/player.js';
+
+// CDN Player URLs with fallbacks
+const CDN_PLAYER_URLS = [
+  'https://cdn.jsdelivr.net/gh/OinkTechLLC/cdnplayerjs@main/playerjs.js',
+  'https://cdn.jsdelivr.net/gh/OinkTechLtd/cdnplayerjs@main/playerjs.js',
+  'https://cdn.jsdelivr.net/gh/twixoffltdco/cdnplayerjs@main/playerjs.js'
+];
 
 const video = document.getElementById('videoPlayer');
 const channelList = document.getElementById('channelList');
@@ -47,16 +55,51 @@ window.addEventListener('load', async () => {
   setupControlsHide();
   await ensurePlaybackEngines();
   await loadPlayerJS();
+  await loadCDNPlayer();
   const saved = localStorage.getItem('iptv_last_url');
   if (saved) document.getElementById('m3uUrl').value = saved;
   
-  // Load saved engine preference
-  const savedEngine = localStorage.getItem('iptv_player_engine');
-  if (savedEngine) {
-    currentEngine = savedEngine;
-    document.getElementById('playerEngine').value = savedEngine;
+  // Load saved player type preference
+  const savedType = localStorage.getItem('iptv_player_type');
+  if (savedType) {
+    currentPlayerType = savedType;
+    document.getElementById('playerType').value = savedType;
+  }
+  
+  // Load saved stream source preference
+  const savedSource = localStorage.getItem('iptv_stream_source');
+  if (savedSource) {
+    currentStreamSource = savedSource;
+    document.getElementById('streamSource').value = savedSource;
   }
 });
+
+async function loadCDNPlayer() {
+  if (window.Playerjs && typeof window.Playerjs === 'function') return Promise.resolve(true);
+  
+  // Try loading from multiple CDN sources with fallback
+  for (const url of CDN_PLAYER_URLS) {
+    try {
+      const loaded = await new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve(typeof window.Playerjs !== 'undefined');
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+      });
+      if (loaded) {
+        console.log('CDN Player loaded from:', url);
+        return true;
+      }
+    } catch (e) {
+      console.warn('CDN Player failed to load from:', url, e);
+    }
+  }
+  console.warn('All CDN Player sources failed, will fallback to standard player');
+  return false;
+}
 
 async function loadPlayerJS() {
   if (window.Playerjs) return Promise.resolve(true);
@@ -332,38 +375,44 @@ function playChannel(idx) {
 
   const url = ch.url;
   
-  // Use selected engine
-  if (currentEngine === 'playerjs') {
+  // Use selected player type
+  if (currentPlayerType === 'standard') {
+    playStandard(url);
+  } else if (currentPlayerType === 'playerjs_repo') {
     playWithPlayerJS(url);
-  } else if (currentEngine === 'hlsjs') {
-    playHLS(url);
-  } else if (currentEngine === 'dashjs') {
-    playDASH(url);
-  } else if (currentEngine === 'native') {
-    playNative(url);
+  } else if (currentPlayerType === 'cdn_player') {
+    playWithCDNPlayer(url);
+  } else if (currentPlayerType === 'videocdn') {
+    playWithVideoCDN(url);
   } else {
-    // Auto-detect based on URL
-    const ext = url.split('?')[0].split('.').pop().toLowerCase();
-    if (url.includes('.m3u8') || url.includes('hls') || ext === 'm3u8' || ext === 'm3u') {
-      playHLS(url);
-    } else if (url.includes('.mpd') || url.includes('dash') || ext === 'mpd') {
-      playDASH(url);
-    } else {
-      playNative(url);
-    }
+    // Default to standard
+    playStandard(url);
   }
 
   // On mobile close sidebar
   if (window.innerWidth <= 768) closeSidebar();
 }
 
-function changePlayerEngine() {
-  const select = document.getElementById('playerEngine');
-  currentEngine = select.value;
-  localStorage.setItem('iptv_player_engine', currentEngine);
-  showToast(`🎬 Движок: ${select.options[select.selectedIndex].text}`);
+function changePlayerType() {
+  const select = document.getElementById('playerType');
+  currentPlayerType = select.value;
+  localStorage.setItem('iptv_player_type', currentPlayerType);
+  showToast(`🎬 Плеер: ${select.options[select.selectedIndex].text}`);
   
-  // Restart current channel with new engine
+  // Restart current channel with new player
+  if (currentChannel) {
+    const idx = allChannels.indexOf(currentChannel);
+    if (idx !== -1) playChannel(idx);
+  }
+}
+
+function changeStreamSource() {
+  const select = document.getElementById('streamSource');
+  currentStreamSource = select.value;
+  localStorage.setItem('iptv_stream_source', currentStreamSource);
+  showToast(`📡 Источник: ${select.options[select.selectedIndex].text}`);
+  
+  // Restart current channel with new source
   if (currentChannel) {
     const idx = allChannels.indexOf(currentChannel);
     if (idx !== -1) playChannel(idx);
@@ -380,19 +429,93 @@ function playWithPlayerJS(url) {
         loop: false,
         callback: function(data) {
           if (data.event === 'error') {
-            showToast('⚠️ PlayerJS ошибка. Переключаем на HLS.js...');
-            document.getElementById('playerEngine').value = 'hlsjs';
-            changePlayerEngine();
+            showToast('⚠️ PlayerJS ошибка. Переключаем на стандартный плеер...');
+            document.getElementById('playerType').value = 'standard';
+            changePlayerType();
           }
         }
       });
     } catch (e) {
       console.warn('PlayerJS failed:', e);
-      playHLS(url);
+      playStandard(url);
     }
   } else {
-    console.warn('PlayerJS not loaded, using HLS.js');
+    console.warn('PlayerJS not loaded, using standard player');
+    playStandard(url);
+  }
+}
+
+// Play with CDN Player (3 fallback sources)
+function playWithCDNPlayer(url) {
+  if (window.Playerjs && typeof window.Playerjs === 'function') {
+    try {
+      playerjsInstance = new Playerjs({
+        id: 'videoPlayer',
+        file: url,
+        autoplay: true,
+        loop: false,
+        callback: function(data) {
+          if (data.event === 'error') {
+            showToast('⚠️ CDN Player ошибка. Пробуем другой источник...');
+            // Try next CDN source
+            loadCDNPlayer().then(() => playWithCDNPlayer(url));
+          }
+        }
+      });
+      showToast('🌐 CDN Player активирован');
+    } catch (e) {
+      console.warn('CDN Player failed:', e);
+      playStandard(url);
+    }
+  } else {
+    console.warn('CDN Player not loaded, using standard player');
+    playStandard(url);
+  }
+}
+
+// Play with VideoCDNHub
+function playWithVideoCDN(url) {
+  const videoCDNUrl = `https://videocdnhub.tatnet.app/?src=${encodeURIComponent(url)}`;
+  
+  // Create iframe for VideoCDNHub
+  const iframe = document.createElement('iframe');
+  iframe.id = 'videoCDNIframe';
+  iframe.src = videoCDNUrl;
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = 'none';
+  iframe.style.position = 'absolute';
+  iframe.style.top = '0';
+  iframe.style.left = '0';
+  iframe.allow = 'autoplay; fullscreen; encrypted-media';
+  iframe.allowFullscreen = true;
+  
+  // Hide native video when using VideoCDNHub
+  video.style.display = 'none';
+  
+  const wrapper = document.getElementById('videoWrapper');
+  const existingIframe = document.getElementById('videoCDNIframe');
+  if (existingIframe) existingIframe.remove();
+  
+  wrapper.appendChild(iframe);
+  showToast('🎬 VideoCDNHub активирован');
+}
+
+// Standard player (HLS.js + DASH.js + Native with quality selection)
+function playStandard(url) {
+  // Show native video element
+  video.style.display = 'block';
+  const existingIframe = document.getElementById('videoCDNIframe');
+  if (existingIframe) existingIframe.remove();
+  
+  const ext = url.split('?')[0].split('.').pop().toLowerCase();
+  
+  if (url.includes('.m3u8') || url.includes('hls') || ext === 'm3u8' || ext === 'm3u') {
     playHLS(url);
+  } else if (url.includes('.mpd') || url.includes('dash') || ext === 'mpd') {
+    playDASH(url);
+  } else {
+    playNative(url);
   }
 }
 
@@ -458,6 +581,12 @@ function destroyPlayer() {
     try { playerjsInstance.destroy(); } catch(e) {}
     playerjsInstance = null; 
   }
+  // Remove VideoCDN iframe if exists
+  const videoCDNIframe = document.getElementById('videoCDNIframe');
+  if (videoCDNIframe) videoCDNIframe.remove();
+  
+  // Show native video element
+  video.style.display = 'block';
   video.src = '';
   video.load();
 }
@@ -622,7 +751,9 @@ function openEmbedModal() {
 
   const ch = currentChannel;
   const playerPath = window.location.pathname.includes('/live/') ? '/live/' : '/';
-  const embedUrl = `${playerPath}embed.html?url=${encodeURIComponent(ch.url)}&name=${encodeURIComponent(ch.name)}&logo=${encodeURIComponent(ch.logo || '')}`;
+  
+  // Include player type and stream source in embed URL
+  const embedUrl = `${playerPath}embed.html?url=${encodeURIComponent(ch.url)}&name=${encodeURIComponent(ch.name)}&logo=${encodeURIComponent(ch.logo || '')}&playertype=${encodeURIComponent(currentPlayerType)}&streamsource=${encodeURIComponent(currentStreamSource)}`;
   const fullEmbedUrl = window.location.origin + embedUrl;
 
   const embedCode = `<iframe src="${fullEmbedUrl}" width="640" height="360" frameborder="0" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" title="${escapeHtml(ch.name)}"></iframe>`;

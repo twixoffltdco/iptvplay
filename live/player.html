@@ -42,14 +42,26 @@
 
     <!-- PLAYER SELECTOR -->
     <div class="player-selector-area">
-      <label>🎬 Движок воспроизведения</label>
-      <select id="playerEngine" onchange="changePlayerEngine()" class="player-select">
-        <option value="playerjs">⚡ PlayerJS (Основной)</option>
-        <option value="hlsjs">🔄 HLS.js (Fallback 1)</option>
-        <option value="dashjs">📹 Dash.js (Fallback 2)</option>
-        <option value="native">🎥 Native HTML5</option>
+      <label>🎬 Выбор плеера</label>
+      <select id="playerType" onchange="changePlayerType()" class="player-select">
+        <option value="standard">📺 Стандартный (с выбором качества)</option>
+        <option value="playerjs_repo">⚡ PlayerJS (из репо)</option>
+        <option value="cdn_player">🌐 CDN Player (3 fallback)</option>
+        <option value="videocdn">🎬 VideoCDNHub</option>
       </select>
-      <small style="color:#6b7280;margin-top:6px;display:block;">Автоматическое переключение при ошибках</small>
+      <small style="color:#6b7280;margin-top:6px;display:block;">4 разных плеера для максимальной совместимости</small>
+    </div>
+
+    <!-- SOURCE SELECTOR -->
+    <div class="player-selector-area" style="margin-top:12px;">
+      <label>📡 Источник потока</label>
+      <select id="streamSource" onchange="changeStreamSource()" class="player-select">
+        <option value="direct">🔗 Прямая ссылка</option>
+        <option value="playerjs">⚡ Через PlayerJS</option>
+        <option value="cdn">🌐 Через CDN Player</option>
+        <option value="videocdn">🎬 Через VideoCDNHub</option>
+      </select>
+      <small style="color:#6b7280;margin-top:6px;display:block;">Выберите способ воспроизведения потока</small>
     </div>
 
     <!-- M3U INPUT -->
