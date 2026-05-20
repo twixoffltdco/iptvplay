@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>SmartTVLove — Плеер</title>
+<title>IPTVPlayer LIVE APP — Premium Player</title>
 <link rel="stylesheet" href="/live/css/player.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.dashjs.org" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <link rel="dns-prefetch" href="//cdn.dashjs.org">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- HLS.js -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <!-- Dash.js -->
@@ -33,8 +33,19 @@
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <h2>📺 Плейлист</h2>
+      <h2>⚡ IPTVPlayer LIVE</h2>
       <button onclick="toggleSidebar()" class="close-sidebar">✕</button>
+    </div>
+
+    <!-- PLAYER SELECTOR -->
+    <div class="player-selector-area">
+      <label>🎬 Движок воспроизведения</label>
+      <select id="playerEngine" onchange="changePlayerEngine()" class="player-select">
+        <option value="playerjs">⚡ PlayerJS (Основной)</option>
+        <option value="cdnplayer">🔄 CDN Player (3 fallback)</option>
+        <option value="videohub">📹 VideoCDNHub</option>
+      </select>
+      <small style="color:#6b7280;margin-top:6px;display:block;">Автоматическое переключение при ошибках</small>
     </div>
 
     <!-- M3U INPUT -->
@@ -42,11 +53,7 @@
       <label>M3U Ссылка или URL файла</label>
       <div class="input-row">
         <input type="url" id="m3uUrl" placeholder="https://... .m3u или .m3u8" />
-        <button onclick="loadPlaylist()" id="loadBtn" class="load-btn">▶ Загрузить</button>
-      </div>
-      <div class="quick-links">
-        <span>Быстрый доступ:</span>
-        <button onclick="loadZabawa()" class="quick-btn">Zabawa Wink</button>
+        <button onclick="loadPlaylist()" id="loadBtn" class="load-btn">⚡ Загрузить</button>
       </div>
     </div>
 
@@ -130,9 +137,10 @@
 
       <!-- NO CHANNEL -->
       <div class="no-channel" id="noChannel">
-        <div class="no-ch-icon">📺</div>
-        <h3>SmartTVLove Player</h3>
+        <div class="no-ch-icon">⚡</div>
+        <h3>IPTVPlayer LIVE APP</h3>
         <p>Загрузите M3U плейлист и выберите канал</p>
+        <small style="color:#6b7280;margin-top:10px;display:block;">Три движка для максимальной совместимости</small>
       </div>
     </div>
 
