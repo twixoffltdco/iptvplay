@@ -8,13 +8,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.dashjs.org" crossorigin>
+<link rel="preconnect" href="https://playerjs.com" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <link rel="dns-prefetch" href="//cdn.dashjs.org">
+<link rel="dns-prefetch" href="//playerjs.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- HLS.js -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <!-- Dash.js -->
 <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+<!-- PlayerJS (loaded dynamically in player.js) -->
 </head>
 <body>
 
@@ -42,8 +45,9 @@
       <label>🎬 Движок воспроизведения</label>
       <select id="playerEngine" onchange="changePlayerEngine()" class="player-select">
         <option value="playerjs">⚡ PlayerJS (Основной)</option>
-        <option value="cdnplayer">🔄 CDN Player (3 fallback)</option>
-        <option value="videohub">📹 VideoCDNHub</option>
+        <option value="hlsjs">🔄 HLS.js (Fallback 1)</option>
+        <option value="dashjs">📹 Dash.js (Fallback 2)</option>
+        <option value="native">🎥 Native HTML5</option>
       </select>
       <small style="color:#6b7280;margin-top:6px;display:block;">Автоматическое переключение при ошибках</small>
     </div>
@@ -54,6 +58,10 @@
       <div class="input-row">
         <input type="url" id="m3uUrl" placeholder="https://... .m3u или .m3u8" />
         <button onclick="loadPlaylist()" id="loadBtn" class="load-btn">⚡ Загрузить</button>
+      </div>
+      <!-- PRESET BUTTONS -->
+      <div class="preset-buttons">
+        <button onclick="loadLiveM3U()" class="preset-btn live-m3u-btn">📺 LiveM3U</button>
       </div>
     </div>
 
