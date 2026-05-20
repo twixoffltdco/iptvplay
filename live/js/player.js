@@ -10,7 +10,7 @@ let playerjsInstance = null;
 let sidebarOpen = true;
 let controlsTimer = null;
 let startupWatchdog = null;
-let currentPlayerType = 'standard'; // Default player type
+let currentPlayerType = 'videocdn'; // Default to VideoCDNHub (most stable)
 let currentStreamSource = 'direct'; // Default stream source
 
 const HLS_CDNS = [
@@ -50,12 +50,17 @@ const toast = document.getElementById('toast');
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
+  // Mute by default to prevent unwanted sound
+  video.muted = true;
   setVolume(80);
   setupVideoEvents();
   setupControlsHide();
   await ensurePlaybackEngines();
-  await loadPlayerJS();
-  await loadCDNPlayer();
+  
+  // Load PlayerJS and CDN Player in parallel but don't block
+  loadPlayerJS();
+  loadCDNPlayer();
+  
   const saved = localStorage.getItem('iptv_last_url');
   if (saved) document.getElementById('m3uUrl').value = saved;
   
@@ -64,6 +69,10 @@ window.addEventListener('load', async () => {
   if (savedType) {
     currentPlayerType = savedType;
     document.getElementById('playerType').value = savedType;
+  } else {
+    // Default to VideoCDNHub if no preference
+    currentPlayerType = 'videocdn';
+    document.getElementById('playerType').value = 'videocdn';
   }
   
   // Load saved stream source preference
@@ -375,17 +384,55 @@ function playChannel(idx) {
 
   const url = ch.url;
   
-  // Use selected player type
-  if (currentPlayerType === 'standard') {
-    playStandard(url);
-  } else if (currentPlayerType === 'playerjs_repo') {
-    playWithPlayerJS(url);
-  } else if (currentPlayerType === 'cdn_player') {
-    playWithCDNPlayer(url);
-  } else if (currentPlayerType === 'videocdn') {
-    playWithVideoCDN(url);
-  } else {
-    // Default to standard
+  // Use selected player type with fallback logic
+  let playerSuccess = false;
+  
+  // Try CDN Player first (if selected or as fallback)
+  if (currentPlayerType === 'cdn_player') {
+    if (window.Playerjs && typeof window.Playerjs === 'function') {
+      try {
+        playWithCDNPlayer(url);
+        playerSuccess = true;
+      } catch (e) {
+        console.warn('CDN Player failed:', e);
+      }
+    }
+  }
+  
+  // Try PlayerJS from repo (if selected)
+  if (!playerSuccess && currentPlayerType === 'playerjs_repo') {
+    if (window.Playerjs) {
+      try {
+        playWithPlayerJS(url);
+        playerSuccess = true;
+      } catch (e) {
+        console.warn('PlayerJS failed:', e);
+      }
+    }
+  }
+  
+  // Try VideoCDNHub (if selected or as primary)
+  if (!playerSuccess && currentPlayerType === 'videocdn') {
+    try {
+      playWithVideoCDN(url);
+      playerSuccess = true;
+    } catch (e) {
+      console.warn('VideoCDNHub failed:', e);
+    }
+  }
+  
+  // Fallback to CDN Player if available (better than standard)
+  if (!playerSuccess && window.Playerjs && typeof window.Playerjs === 'function') {
+    try {
+      playWithCDNPlayer(url);
+      playerSuccess = true;
+    } catch (e) {
+      console.warn('CDN Player fallback failed:', e);
+    }
+  }
+  
+  // Fallback to standard player if nothing else works
+  if (!playerSuccess) {
     playStandard(url);
   }
 
@@ -398,6 +445,9 @@ function changePlayerType() {
   currentPlayerType = select.value;
   localStorage.setItem('iptv_player_type', currentPlayerType);
   showToast(`🎬 Плеер: ${select.options[select.selectedIndex].text}`);
+  
+  // Mute by default when switching player types to prevent unwanted sound
+  video.muted = true;
   
   // Restart current channel with new player
   if (currentChannel) {
@@ -419,9 +469,12 @@ function changeStreamSource() {
   }
 }
 
+// Play with PlayerJS from repo
 function playWithPlayerJS(url) {
   if (window.Playerjs) {
     try {
+      // Mute video element to prevent sound when not playing
+      video.muted = true;
       playerjsInstance = new Playerjs({
         id: 'videoPlayer',
         file: url,
@@ -429,19 +482,23 @@ function playWithPlayerJS(url) {
         loop: false,
         callback: function(data) {
           if (data.event === 'error') {
-            showToast('⚠️ PlayerJS ошибка. Переключаем на стандартный плеер...');
-            document.getElementById('playerType').value = 'standard';
+            showToast('⚠️ PlayerJS ошибка. Переключаем на VideoCDNHub...');
+            document.getElementById('playerType').value = 'videocdn';
             changePlayerType();
           }
         }
       });
+      // Show native video and hide iframe
+      video.style.display = 'block';
+      const existingIframe = document.getElementById('videoCDNIframe');
+      if (existingIframe) existingIframe.remove();
     } catch (e) {
       console.warn('PlayerJS failed:', e);
-      playStandard(url);
+      playWithVideoCDN(url);
     }
   } else {
-    console.warn('PlayerJS not loaded, using standard player');
-    playStandard(url);
+    console.warn('PlayerJS not loaded, using VideoCDNHub');
+    playWithVideoCDN(url);
   }
 }
 
@@ -449,6 +506,8 @@ function playWithPlayerJS(url) {
 function playWithCDNPlayer(url) {
   if (window.Playerjs && typeof window.Playerjs === 'function') {
     try {
+      // Mute video element to prevent sound when not playing
+      video.muted = true;
       playerjsInstance = new Playerjs({
         id: 'videoPlayer',
         file: url,
@@ -456,20 +515,24 @@ function playWithCDNPlayer(url) {
         loop: false,
         callback: function(data) {
           if (data.event === 'error') {
-            showToast('⚠️ CDN Player ошибка. Пробуем другой источник...');
-            // Try next CDN source
-            loadCDNPlayer().then(() => playWithCDNPlayer(url));
+            showToast('⚠️ CDN Player ошибка. Пробуем VideoCDNHub...');
+            document.getElementById('playerType').value = 'videocdn';
+            changePlayerType();
           }
         }
       });
+      // Show native video and hide iframe
+      video.style.display = 'block';
+      const existingIframe = document.getElementById('videoCDNIframe');
+      if (existingIframe) existingIframe.remove();
       showToast('🌐 CDN Player активирован');
     } catch (e) {
       console.warn('CDN Player failed:', e);
-      playStandard(url);
+      playWithVideoCDN(url);
     }
   } else {
-    console.warn('CDN Player not loaded, using standard player');
-    playStandard(url);
+    console.warn('CDN Player not loaded, using VideoCDNHub');
+    playWithVideoCDN(url);
   }
 }
 
@@ -503,10 +566,13 @@ function playWithVideoCDN(url) {
 
 // Standard player (HLS.js + DASH.js + Native with quality selection)
 function playStandard(url) {
-  // Show native video element
+  // Show native video element for standard player
   video.style.display = 'block';
   const existingIframe = document.getElementById('videoCDNIframe');
   if (existingIframe) existingIframe.remove();
+  
+  // Unmute when actively playing with standard player
+  video.muted = false;
   
   const ext = url.split('?')[0].split('.').pop().toLowerCase();
   
@@ -585,10 +651,14 @@ function destroyPlayer() {
   const videoCDNIframe = document.getElementById('videoCDNIframe');
   if (videoCDNIframe) videoCDNIframe.remove();
   
-  // Show native video element
-  video.style.display = 'block';
+  // Mute and stop video to prevent sound when not playing
+  video.muted = true;
+  video.pause();
   video.src = '';
   video.load();
+  
+  // Keep video element hidden by default (only show for standard player)
+  video.style.display = 'none';
 }
 
 // ─── HLS QUALITY ─────────────────────────────────────────────────────────────
@@ -681,6 +751,12 @@ function pad(n) { return n.toString().padStart(2, '0'); }
 // ─── CONTROLS ─────────────────────────────────────────────────────────────────
 function togglePlay() {
   if (!currentChannel) return;
+  
+  // If using VideoCDNHub, unmute on first play interaction
+  if (currentPlayerType === 'videocdn' && video.muted) {
+    video.muted = false;
+  }
+  
   video.paused ? video.play() : video.pause();
 }
 
@@ -695,6 +771,10 @@ function seekFwd() { video.currentTime = Math.min(video.duration || Infinity, vi
 
 function setVolume(val) {
   video.volume = val / 100;
+  // Unmute when user adjusts volume
+  if (val > 0 && video.muted) {
+    video.muted = false;
+  }
   document.getElementById('volumeBar').value = val;
 }
 
