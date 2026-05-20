@@ -123,12 +123,21 @@ const params = new URLSearchParams(location.search);
 const streamUrl = params.get('url') || '';
 const chName = params.get('name') || 'Канал';
 const chLogo = params.get('logo') || '';
+const playerType = params.get('playertype') || 'standard';
+const streamSource = params.get('streamsource') || 'direct';
 
 const vid = document.getElementById('vid');
-let hls, dash;
+let hls, dash, playerjsInstance;
 let watchdogTimer = null;
 let retryCount = 0;
 const MAX_RETRIES = 2;
+
+// CDN Player URLs with fallbacks
+const CDN_PLAYER_URLS = [
+  'https://cdn.jsdelivr.net/gh/OinkTechLLC/cdnplayerjs@main/playerjs.js',
+  'https://cdn.jsdelivr.net/gh/OinkTechLtd/cdnplayerjs@main/playerjs.js',
+  'https://cdn.jsdelivr.net/gh/twixoffltdco/cdnplayerjs@main/playerjs.js'
+];
 
 const HLS_CDNS = [
   'https://cdn.jsdelivr.net/npm/hls.js@latest',
@@ -166,14 +175,41 @@ function loadScriptWithFallback(urls, checker) {
   }).then(ok => ok ? true : loadScriptWithFallback(rest, checker));
 }
 
+async function loadCDNPlayer() {
+  // Try loading from multiple CDN sources with fallback
+  for (const url of CDN_PLAYER_URLS) {
+    try {
+      const loaded = await new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve(typeof window.Playerjs !== 'undefined');
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+      });
+      if (loaded) {
+        console.log('CDN Player loaded from:', url);
+        return true;
+      }
+    } catch (e) {
+      console.warn('CDN Player failed to load from:', url, e);
+    }
+  }
+  console.warn('All CDN Player sources failed');
+  return false;
+}
+
 async function ensurePlaybackEngines() {
-  const [hlsReady, dashReady] = await Promise.all([
+  const [hlsReady, dashReady, cdnReady] = await Promise.all([
     loadScriptWithFallback(HLS_CDNS, () => typeof window.Hls !== 'undefined'),
-    loadScriptWithFallback(DASH_CDNS, () => typeof window.dashjs !== 'undefined')
+    loadScriptWithFallback(DASH_CDNS, () => typeof window.dashjs !== 'undefined'),
+    loadCDNPlayer()
   ]);
 
   if (!hlsReady) console.warn('HLS engine was not loaded from CDNs');
   if (!dashReady) console.warn('DASH engine was not loaded from CDNs');
+  if (!cdnReady) console.warn('CDN Player was not loaded');
 }
 
 async function init() {
@@ -188,13 +224,17 @@ async function init() {
   showSpin(true);
   await ensurePlaybackEngines();
 
-  const ext = streamUrl.split('?')[0].split('.').pop().toLowerCase();
-  if (streamUrl.includes('.m3u8') || streamUrl.includes('hls') || ext === 'm3u8' || ext === 'm3u') {
-    playHLS(streamUrl);
-  } else if (streamUrl.includes('.mpd') || ext === 'mpd') {
-    playDASH(streamUrl);
+  // Use selected player type
+  if (playerType === 'standard') {
+    playStandard(streamUrl);
+  } else if (playerType === 'playerjs_repo') {
+    playWithPlayerJS(streamUrl);
+  } else if (playerType === 'cdn_player') {
+    playWithCDNPlayer(streamUrl);
+  } else if (playerType === 'videocdn') {
+    playWithVideoCDN(streamUrl);
   } else {
-    playNative(streamUrl);
+    playStandard(streamUrl);
   }
 
   startWatchdog();
@@ -258,10 +298,111 @@ function playNative(url) {
   vid.play().catch(() => recoverWithRetry('Не удалось воспроизвести поток'));
 }
 
+// Standard player (HLS.js + DASH.js + Native with quality selection)
+function playStandard(url) {
+  const ext = url.split('?')[0].split('.').pop().toLowerCase();
+  if (url.includes('.m3u8') || url.includes('hls') || ext === 'm3u8' || ext === 'm3u') {
+    playHLS(url);
+  } else if (url.includes('.mpd') || ext === 'mpd') {
+    playDASH(url);
+  } else {
+    playNative(url);
+  }
+}
+
+// Play with PlayerJS
+function playWithPlayerJS(url) {
+  if (window.Playerjs && typeof window.Playerjs === 'function') {
+    try {
+      playerjsInstance = new Playerjs({
+        id: 'vid',
+        file: url,
+        autoplay: true,
+        loop: false,
+        callback: function(data) {
+          if (data.event === 'error') {
+            console.warn('PlayerJS error, falling back to standard');
+            playStandard(url);
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('PlayerJS failed:', e);
+      playStandard(url);
+    }
+  } else {
+    console.warn('PlayerJS not loaded, using standard player');
+    playStandard(url);
+  }
+}
+
+// Play with CDN Player (3 fallback sources)
+function playWithCDNPlayer(url) {
+  if (window.Playerjs && typeof window.Playerjs === 'function') {
+    try {
+      playerjsInstance = new Playerjs({
+        id: 'vid',
+        file: url,
+        autoplay: true,
+        loop: false,
+        callback: function(data) {
+          if (data.event === 'error') {
+            console.warn('CDN Player error, trying fallback...');
+            loadCDNPlayer().then(() => playWithCDNPlayer(url));
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('CDN Player failed:', e);
+      playStandard(url);
+    }
+  } else {
+    console.warn('CDN Player not loaded, using standard player');
+    playStandard(url);
+  }
+}
+
+// Play with VideoCDNHub
+function playWithVideoCDN(url) {
+  const videoCDNUrl = `https://videocdnhub.tatnet.app/?src=${encodeURIComponent(url)}`;
+  
+  // Create iframe for VideoCDNHub
+  const iframe = document.createElement('iframe');
+  iframe.id = 'videoCDNIframe';
+  iframe.src = videoCDNUrl;
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = 'none';
+  iframe.style.position = 'absolute';
+  iframe.style.top = '0';
+  iframe.style.left = '0';
+  iframe.allow = 'autoplay; fullscreen; encrypted-media';
+  iframe.allowFullscreen = true;
+  
+  // Hide native video when using VideoCDNHub
+  vid.style.display = 'none';
+  
+  const wrapper = document.getElementById('pw');
+  const existingIframe = document.getElementById('videoCDNIframe');
+  if (existingIframe) existingIframe.remove();
+  
+  wrapper.appendChild(iframe);
+}
+
 function cleanupPlayers() {
   clearTimeout(watchdogTimer);
   if (hls) { hls.destroy(); hls = null; }
   if (dash) { dash.reset(); dash = null; }
+  if (playerjsInstance) {
+    try { playerjsInstance.destroy(); } catch(e) {}
+    playerjsInstance = null;
+  }
+  // Remove VideoCDN iframe if exists
+  const videoCDNIframe = document.getElementById('videoCDNIframe');
+  if (videoCDNIframe) videoCDNIframe.remove();
+  
+  // Show native video element
+  vid.style.display = 'block';
   vid.removeAttribute('src');
   vid.load();
 }
