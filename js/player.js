@@ -131,7 +131,7 @@ async function loadPlaylist() {
 }
 
 function loadZabawa() {
-  const zabawa = 'https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u';
+  const zabawa = 'https://secure-272717.tatnet.app/livem3u.tatnet.app/data/playlist.m3u';
   document.getElementById('m3uUrl').value = zabawa;
   loadPlaylist();
 }
