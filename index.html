@@ -13,6 +13,8 @@
             color: #fff;
             height: 100vh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .app-container {
             display: flex;
@@ -32,6 +34,7 @@
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 10;
+            flex-shrink: 0;
         }
         .logo h1 {
             font-size: 1.5rem;
@@ -62,6 +65,11 @@
             font-weight: 500;
             transition: all 0.2s;
             font-size: 0.9rem;
+            will-change: background-color;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .playlist-btn.active {
             background: #00d2ff;
@@ -80,6 +88,11 @@
             gap: 8px;
             font-size: 0.9rem;
             transition: 0.2s;
+            will-change: background-color;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .embed-btn:hover {
             background: #00d2ff;
@@ -103,10 +116,13 @@
             flex-direction: column;
             overflow: hidden;
             border-right: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch;
         }
         .search-box {
             padding: 15px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
         .search-box input {
             width: 100%;
@@ -122,6 +138,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 10px;
+            -webkit-overflow-scrolling: touch;
         }
         .channel-item {
             display: flex;
@@ -132,6 +149,8 @@
             cursor: pointer;
             transition: all 0.2s;
             gap: 12px;
+            will-change: background-color;
+            -webkit-tap-highlight-color: transparent;
         }
         .channel-item:hover {
             background: rgba(255,255,255,0.1);
@@ -171,11 +190,13 @@
             flex-direction: column;
             background: #000;
             position: relative;
+            min-width: 0;
         }
         .player-wrapper {
             flex: 1;
             background: #000;
             position: relative;
+            will-change: contents;
         }
         #player-container {
             width: 100%;
@@ -190,9 +211,12 @@
             gap: 20px;
             flex-wrap: wrap;
             z-index: 5;
+            flex-shrink: 0;
+            touch-action: manipulation;
         }
         .current-info {
             flex: 1;
+            min-width: 0;
         }
         .current-channel-name {
             font-size: 1.2rem;
@@ -215,6 +239,11 @@
             cursor: pointer;
             transition: 0.2s;
             font-size: 13px;
+            will-change: background-color;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .action-btn:hover {
             background: #00d2ff;
@@ -259,6 +288,9 @@
             border: 1px solid #2a2e42;
             max-height: 200px;
             overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            user-select: all;
+            -webkit-user-select: all;
         }
         .copy-btn {
             background: #00d2ff;
@@ -267,6 +299,11 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            will-change: background-color;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .close-modal {
             background: none;
@@ -276,14 +313,63 @@
             cursor: pointer;
         }
         @media (max-width: 768px) {
-            .sidebar { width: 250px; }
-            .playlist-btn { padding: 4px 12px; font-size: 12px; }
+            .header { padding: 10px 15px; flex-wrap: wrap; gap: 10px; }
+            .logo h1 { font-size: 1.2rem; }
+            .logo p { font-size: 0.65rem; }
+            .playlist-selector { order: 3; width: 100%; justify-content: center; }
+            .embed-btn { padding: 6px 12px; font-size: 0.8rem; }
+            .sidebar { 
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 100;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+                transform: translateZ(0);
+                backface-visibility: hidden;
+            }
+            .sidebar.open { left: 0; }
+            .main-content { gap: 0; }
+            .video-area { width: 100%; }
+            .player-controls { padding: 10px 15px; }
+            .current-channel-name { font-size: 1rem; }
+            .action-buttons { gap: 8px; }
+            .action-btn { padding: 6px 12px; font-size: 12px; }
+            .mobile-menu-btn {
+                display: flex !important;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.3rem;
+                cursor: pointer;
+                padding: 5px;
+                margin-right: 10px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .modal-content { width: 95%; padding: 20px; }
+            .embed-code { font-size: 11px; max-height: 150px; }
+            .copy-btn { width: 100%; }
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 99;
+            }
+            .overlay.show { display: block; }
+        }
+        @media (min-width: 769px) {
+            .mobile-menu-btn { display: none !important; }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
         <div class="header">
+            <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
             <div class="playlist-selector">
                 <button class="playlist-btn active" data-playlist="livem3u">LIVEM3U</button>
                 <button class="playlist-btn" data-playlist="zabava">WINK Zabava</button>
@@ -292,7 +378,7 @@
             <button class="embed-btn" id="openEmbedModalBtn"><i class="fas fa-code"></i> Embed Channel</button>
         </div>
         <div class="main-content">
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar">
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="🔍 Search channel...">
                 </div>
@@ -317,6 +403,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Overlay для мобильного меню -->
+    <div class="overlay" id="sidebarOverlay"></div>
 
     <!-- Модальное окно для Embed кода -->
     <div id="embedModal" class="modal">
@@ -516,7 +605,8 @@
                 alert('Please select a channel first');
                 return;
             }
-            const embedHtml = `<iframe src="/embed.html?url=${encodeURIComponent(currentChannel.url)}&title=${encodeURIComponent(currentChannel.name)}" width="100%" height="500" frameborder="0" allowfullscreen></iframe>`;
+            const currentDomain = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            const embedHtml = `<iframe src="${currentDomain}/embed.html?url=${encodeURIComponent(currentChannel.url)}&title=${encodeURIComponent(currentChannel.name)}" width="100%" height="500" frameborder="0" allowfullscreen></iframe>`;
             embedCodeText.textContent = embedHtml;
             embedModal.style.display = 'flex';
         });
@@ -542,6 +632,46 @@
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
             const container = document.getElementById('player-container');
             if (container.requestFullscreen) container.requestFullscreen();
+        });
+
+        // Мобильное меню
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('show');
+        }
+        
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+        
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('show');
+        });
+        
+        // Закрытие сайдбара при клике на канал
+        channelsListEl.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('show');
+            }
+        });
+
+        // Оптимизация: отключение рендеринга неактивных элементов
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('open');
+                    sidebarOverlay.classList.remove('show');
+                }
+            }, 200);
         });
 
         function escapeHtml(str) {
