@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SmartTVLove — Embed Player</title>
+<title>IPTVPlayer LIVE — Embed Player</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.dashjs.org" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -90,7 +90,7 @@ video { width: 100%; height: 100%; object-fit: contain; display: block; }
     <span id="chName">Загрузка...</span>
     <span class="live-badge" id="liveBadge" style="display:none">LIVE</span>
   </div>
-  <div class="branding">SmartTVLove by StreamLIVETV</div>
+  <div class="branding">IPTVPlayer LIVE by StreamLIVETV</div>
 
   <video id="vid" playsinline></video>
 
@@ -141,7 +141,7 @@ const DASH_CDNS = [
 ];
 
 document.getElementById('chName').textContent = chName;
-document.title = chName + ' — SmartTVLove by StreamLIVETV';
+document.title = chName + ' — IPTVPlayer LIVE by StreamLIVETV';
 
 if (chLogo) {
   const logo = document.getElementById('logoImg');

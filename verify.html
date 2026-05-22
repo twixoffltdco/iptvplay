@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>IPTVPlayer LIVE — Проверка безопасности</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0d1117 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      padding: 20px;
+    }
+
+    .verify-container {
+      background: rgba(13, 17, 23, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid rgba(52, 184, 108, 0.2);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(52, 184, 108, 0.1) inset;
+      max-width: 520px;
+      width: 100%;
+      padding: 40px 32px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #34b86c, #2d9f5c);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(52, 184, 108, 0.3);
+    }
+
+    .logo-icon i {
+      font-size: 24px;
+      color: #fff;
+    }
+
+    .app-name {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, #a8b5c4);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Warning Box */
+    .warning-box {
+      background: rgba(234, 179, 8, 0.08);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .warning-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .warning-header i {
+      color: #eab308;
+      font-size: 18px;
+    }
+
+    .warning-title {
+      color: #eab308;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .warning-text {
+      color: #9ca3af;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Captcha Area */
+    .captcha-section {
+      background: rgba(22, 27, 34, 0.8);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(52, 184, 108, 0.15);
+    }
+
+    .canvas-container {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      background: #f8f9fa;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      max-width: 100%;
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    canvas:hover {
+      transform: scale(1.02);
+    }
+
+    .refresh-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .refresh-btn {
+      background: rgba(52, 184, 108, 0.1);
+      border: 1px solid rgba(52, 184, 108, 0.3);
+      color: #34b86c;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(52, 184, 108, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .captcha-hint {
+      color: #6b7280;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Input */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #9ca3af;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .captcha-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(13, 17, 23, 0.8);
+      border: 1.5px solid rgba(52, 184, 108, 0.3);
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: 'Inter', monospace;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .captcha-input:focus {
+      border-color: #34b86c;
+      box-shadow: 0 0 0 3px rgba(52, 184, 108, 0.2);
+    }
+
+    .captcha-input::placeholder {
+      color: #4b5563;
+    }
+
+    /* Verify Button */
+    .verify-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #34b86c, #2d9f5c);
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(52, 184, 108, 0.4);
+    }
+
+    .verify-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(52, 184, 108, 0.5);
+    }
+
+    .verify-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status */
+    .status-msg {
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 16px;
+      background: rgba(13, 17, 23, 0.6);
+    }
+
+    .status-msg.error {
+      color: #f87171;
+      border-left: 3px solid #ef4444;
+    }
+
+    .status-msg.success {
+      color: #4ade80;
+      border-left: 3px solid #22c55e;
+    }
+
+    .status-msg.loading {
+      color: #60a5fa;
+    }
+
+    /* Footer info */
+    .footer-info {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .footer-info p {
+      color: #4b5563;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .footer-info strong {
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+
+<div class="verify-container">
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <i class="fas fa-play"></i>
+      </div>
+      <span class="app-name">IPTVPlayer LIVE APP</span>
+    </div>
+    <h1>Проверка безопасности</h1>
+    <p class="subtitle">Подтвердите, что вы человек, чтобы продолжить</p>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-header">
+      <i class="fas fa-shield-halved"></i>
+      <span class="warning-title">Защита от ботов активирована</span>
+    </div>
+    <p class="warning-text">
+      Мы заметили подозрительную активность с вашего IP-адреса. 
+      Пожалуйста, пройдите проверку, чтобы получить доступ к приложению.
+    </p>
+  </div>
+
+  <div class="captcha-section">
+    <div class="canvas-container">
+      <canvas id="captchaCanvas" width="420" height="110"></canvas>
+    </div>
+    <div class="refresh-row">
+      <span class="captcha-hint">
+        <i class="fas fa-keyboard"></i> Введите символы с изображения
+      </span>
+      <button class="refresh-btn" id="refreshBtn">
+        <i class="fas fa-sync-alt"></i> Обновить
+      </button>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label for="captchaInput">Код с картинки</label>
+    <input type="text" id="captchaInput" class="captcha-input" placeholder="Введите код..." autocomplete="off" spellcheck="false">
+  </div>
+
+  <button id="verifyBtn" class="verify-btn">
+    <i class="fas fa-check-circle"></i>
+    <span>Я не робот — Проверить</span>
+  </button>
+
+  <div id="statusMsg" class="status-msg">
+    <i class="fas fa-lock"></i> Введите символы для продолжения
+  </div>
+
+  <div class="footer-info">
+    <p>
+      После успешной проверки вы получите доступ к <strong>IPTVPlayer LIVE APP</strong><br>
+      Ваши данные не сохраняются. Проверка необходима только один раз за сессию.
+    </p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('captchaCanvas');
+  const ctx = canvas.getContext('2d');
+  const captchaInput = document.getElementById('captchaInput');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const statusMsg = document.getElementById('statusMsg');
+
+  let currentCaptcha = '';
+  let isLoading = false;
+  let verified = false;
+
+  const WORDS = [
+    'stream', 'player', 'live', 'video', 'media', 'watch', 'movie', 'channel',
+    'iptv', 'smart', 'tvbox', 'online', 'hdplay', 'webtv', 'cast', 'view'
+  ];
+
+  function getRandomWord() {
+    return WORDS[Math.floor(Math.random() * WORDS.length)];
+  }
+
+  function drawCaptcha(word) {
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#e8f5e9');
+    grad.addColorStop(1, '#c8e6c9');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Noise lines
+    for (let i = 0; i < 15; i++) {
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * w, Math.random() * h);
+      ctx.lineTo(Math.random() * w, Math.random() * h);
+      ctx.lineWidth = 1 + Math.random() * 1.5;
+      ctx.strokeStyle = `rgba(76, 175, 80, ${0.2 + Math.random() * 0.3})`;
+      ctx.stroke();
+    }
+
+    // Noise dots
+    for (let i = 0; i < 80; i++) {
+      ctx.beginPath();
+      ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 2 + 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(56, 142, 60, ${0.3 + Math.random() * 0.4})`;
+      ctx.fill();
+    }
+
+    // Draw text with distortion
+    const fontSize = Math.max(28, Math.min(42, 70 / word.length));
+    ctx.font = `bold ${fontSize}px "Courier New", monospace`;
+    ctx.textBaseline = 'middle';
+    
+    const charWidth = w / (word.length + 1);
+    let x = charWidth * 0.8;
+    
+    for (let i = 0; i < word.length; i++) {
+      ctx.save();
+      
+      const angle = (Math.random() - 0.5) * 0.5;
+      const y = h / 2 + (Math.random() - 0.5) * 15;
+      
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      
+      ctx.fillStyle = '#1b5e20';
+      ctx.shadowBlur = 2;
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.fillText(word[i], 0, 0);
+      
+      ctx.restore();
+      x += charWidth;
+    }
+
+    // Border
+    ctx.strokeStyle = '#4caf50';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(3, 3, w - 6, h - 6);
+  }
+
+  async function generateCaptcha() {
+    if (isLoading) return;
+    isLoading = true;
+    
+    statusMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерация капчи...';
+    statusMsg.className = 'status-msg loading';
+    
+    await new Promise(r => setTimeout(r, 300));
+    
+    currentCaptcha = getRandomWord().toLowerCase();
+    drawCaptcha(currentCaptcha);
+    
+    captchaInput.value = '';
+    statusMsg.innerHTML = '<i class="fas fa-keyboard"></i> Введите код с изображения';
+    statusMsg.className = 'status-msg';
+    
+    isLoading = false;
+  }
+
+  async function verify() {
+    if (verified) return;
+    if (isLoading) {
+      statusMsg.innerHTML = '<i class="fas fa-hourglass"></i> Подождите завершения генерации...';
+      return;
+    }
+
+    const userInput = captchaInput.value.trim().toLowerCase();
+    
+    if (!userInput) {
+      statusMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Введите код с картинки';
+      statusMsg.className = 'status-msg error';
+      return;
+    }
+
+    if (userInput === currentCaptcha) {
+      verified = true;
+      statusMsg.innerHTML = '<i class="fas fa-check-double"></i> ✓ Успешно! Вы подтверждены. Открываем приложение...';
+      statusMsg.className = 'status-msg success';
+      
+      verifyBtn.disabled = true;
+      verifyBtn.style.opacity = '0.7';
+      
+      // Redirect to main app (index.html parent directory or same level)
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1200);
+    } else {
+      statusMsg.innerHTML = `<i class="fas fa-times-circle"></i> Неверный код. Попробуйте снова.`;
+      statusMsg.className = 'status-msg error';
+      captchaInput.value = '';
+      captchaInput.focus();
+      
+      // Auto refresh after 2 failed attempts
+      const fails = parseInt(sessionStorage.getItem('cap_fails') || '0');
+      if (fails >= 1) {
+        await generateCaptcha();
+        sessionStorage.setItem('cap_fails', '0');
+      } else {
+        sessionStorage.setItem('cap_fails', (fails + 1).toString());
+      }
+    }
+  }
+
+  verifyBtn.addEventListener('click', verify);
+  refreshBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!verified) generateCaptcha();
+  });
+
+  captchaInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') verify();
+  });
+
+  // Initialize
+  generateCaptcha();
+})();
+</script>
+
+</body>
+</html>

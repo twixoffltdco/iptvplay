@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>SmartTVLove — Плеер</title>
+<title>IPTVPlayer LIVE — Плеер</title>
 <link rel="stylesheet" href="css/player.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -22,8 +22,53 @@
 <div class="topbar">
   <div class="topbar-title">📺 <span id="currentChannelName">Нет канала</span></div>
   <div class="topbar-right">
+    <button onclick="togglePlayerSelector()" class="icon-btn" title="Выбрать плеер">🎬</button>
     <button onclick="toggleSidebar()" class="icon-btn" title="Каналы">☰</button>
     <button onclick="openEmbedModal()" class="icon-btn" id="embedBtn" title="Embed код" disabled>🔗</button>
+  </div>
+</div>
+
+<!-- PLAYER SELECTOR MODAL -->
+<div class="modal-overlay" id="playerSelectorModal" style="display:none" onclick="closePlayerSelector(event)">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3>🎬 Выбор плеера</h3>
+      <button onclick="closePlayerSelector()" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-note">Выберите плеер для воспроизведения:</p>
+      
+      <div class="player-option" onclick="selectPlayer(1)">
+        <div class="player-option-icon">📺</div>
+        <div class="player-option-info">
+          <strong>Основной плеер (player.js)</strong>
+          <small>Использует player.js из репозитория. Поддержка HLS, DASH, MP4.</small>
+        </div>
+        <div class="player-option-check" id="check1">○</div>
+      </div>
+      
+      <div class="player-option" onclick="selectPlayer(2)">
+        <div class="player-option-icon">🔄</div>
+        <div class="player-option-info">
+          <strong>Резервный CDN плеер</strong>
+          <small>Три CDN источника: OinkTechLLC, OinkTechLtd, twixoffltdco. Автоматическое переключение.</small>
+        </div>
+        <div class="player-option-check" id="check2">○</div>
+      </div>
+      
+      <div class="player-option" onclick="selectPlayer(3)">
+        <div class="player-option-icon">🌐</div>
+        <div class="player-option-info">
+          <strong>VideoCDNHub плеер</strong>
+          <small>Использует videocdnhub.tatnet.app для воспроизведения потоков.</small>
+        </div>
+        <div class="player-option-check" id="check3">○</div>
+      </div>
+      
+      <div class="player-hint">
+        <i class="fas fa-info-circle"></i> Если один плеер не работает, автоматически включается следующий.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -174,6 +219,121 @@
 <!-- LOADING TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="/live/js/player.js"></script>
+<script src="js/player.js"></script>
 </body>
 </html>
+
+<style>
+/* Player Selector Styles */
+.player-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.player-option:hover {
+  background: rgba(230,57,70,0.1);
+  border-color: rgba(230,57,70,0.3);
+}
+.player-option.selected {
+  background: rgba(230,57,70,0.15);
+  border-color: rgba(230,57,70,0.5);
+}
+.player-option-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+}
+.player-option-info {
+  flex: 1;
+}
+.player-option-info strong {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.player-option-info small {
+  color: #8b949e;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.player-option-check {
+  font-size: 24px;
+  color: #34b86c;
+  font-weight: bold;
+}
+.player-hint {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(52,184,108,0.1);
+  border: 1px solid rgba(52,184,108,0.2);
+  border-radius: 10px;
+  color: #34b86c;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+</style>
+
+<script>
+// Player Selector Logic
+let currentPlayer = 1;
+
+function togglePlayerSelector() {
+  const modal = document.getElementById('playerSelectorModal');
+  modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+  updatePlayerChecks();
+}
+
+function closePlayerSelector(e) {
+  if (!e || e.target === document.getElementById('playerSelectorModal')) {
+    document.getElementById('playerSelectorModal').style.display = 'none';
+  }
+}
+
+function selectPlayer(num) {
+  currentPlayer = num;
+  localStorage.setItem('iptv_player_type', num.toString());
+  updatePlayerChecks();
+  
+  // Show confirmation
+  const names = ['', 'Основной плеер', 'Резервный CDN', 'VideoCDNHub'];
+  showToast(`✅ Выбран: ${names[num]}`);
+  
+  setTimeout(() => {
+    document.getElementById('playerSelectorModal').style.display = 'none';
+  }, 500);
+}
+
+function updatePlayerChecks() {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('check' + i);
+    if (el) {
+      el.textContent = (i === currentPlayer) ? '●' : '○';
+      document.querySelectorAll('.player-option')[i-1]?.classList.toggle('selected', i === currentPlayer);
+    }
+  }
+}
+
+// Load saved player preference
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('iptv_player_type');
+  if (saved) {
+    currentPlayer = parseInt(saved);
+    updatePlayerChecks();
+  }
+});
+</script>
