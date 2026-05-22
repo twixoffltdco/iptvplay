@@ -285,12 +285,13 @@
     <div class="app-container">
         <div class="header">
             <div class="logo">
-                <h1><i class="fas fa-tv"></i> SmartTVLove Player</h1>
+                <h1><i class="fas fa-tv"></i> IPTVPlayer App</h1>
                 <p>Ultra HD | Live IPTV</p>
             </div>
             <div class="playlist-selector">
                 <button class="playlist-btn active" data-playlist="livem3u">LIVEM3U</button>
                 <button class="playlist-btn" data-playlist="zabava">WINK Zabava</button>
+                <button class="playlist-btn" data-playlist="zabavaoff">WINK Zabava Project Offcial</button>
             </div>
             <button class="embed-btn" id="openEmbedModalBtn"><i class="fas fa-code"></i> Embed Channel</button>
         </div>
@@ -341,7 +342,8 @@
         // Конфигурация плейлистов
         const PLAYLISTS = {
             livem3u: 'https://secure-272717.tatnet.app/livem3u.tatnet.app/data/playlist.m3u',
-            zabava: 'https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u'
+            zabavaoff: 'https://raw.githubusercontent.com/CrocoUser/zabava-project/refs/heads/main/zabava-full.m3u'
+            zabava: 'https://secure-272717.tatnet.app/livem3u.tatnet.app/zabava-full.m3u'
         };
 
         let currentPlaylistId = 'livem3u';
