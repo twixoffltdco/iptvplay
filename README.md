@@ -1,4 +1,4 @@
-# 📺 SmartTVLove App — Zabawa Wink для РФ
+# 📺 IPTVPlayerOrg — Zabawa Wink для РФ
 
 Современный IPTV-плеер с поддержкой M3U/M3U8/HLS/DASH, работающий прямо в браузере.
 
@@ -68,4 +68,4 @@ SmartTVLove/
 
 ---
 
-⚠️ Только для РФ · SmartTVLove App © 2024
+⚠️ Только для РФ и СНГ · IPPLAYERORG App © 2026
